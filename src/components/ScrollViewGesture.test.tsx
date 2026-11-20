@@ -257,3 +257,47 @@ describe("nearest snap", () => {
     expect(translation.value).toMatchObject({ toValue: expectedTranslation });
   });
 });
+
+describe("page snap", () => {
+  // As above: a release leaves its snap animation running under the Reanimated Jest mock.
+  beforeEach(() => {
+    mockUsePanGestureProxy.mockClear();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it.each([
+    ["moves to the next page when a drag past halfway is released at rest", -60, 0, -100],
+    ["stays on the page when a drag short of halfway is released at rest", -40, 0, 0],
+    ["returns to the page when the release velocity points back", -60, 400, 0],
+    ["moves to the next page on a flick", -20, -400, -100],
+  ] as const)("%s", (_name, translationX, velocityX, expectedTranslation) => {
+    const { gestureCallbacks, translation } = renderGesture({
+      size: 100,
+      dataLength: 10,
+      containerSize: { width: 100, height: 200 },
+    });
+
+    act(() => {
+      gestureCallbacks.onGestureStart({} as GestureStateChangeEvent<PanGestureHandlerEventPayload>);
+      gestureCallbacks.onGestureUpdate({
+        translationX,
+        translationY: 0,
+      } as GestureUpdateEvent<PanGestureHandlerEventPayload>);
+      gestureCallbacks.onGestureEnd(
+        {
+          translationX,
+          translationY: 0,
+          velocityX,
+          velocityY: 0,
+        } as GestureStateChangeEvent<PanGestureHandlerEventPayload>,
+        true
+      );
+    });
+
+    expect(translation.value).toMatchObject({ toValue: expect.closeTo(expectedTranslation) });
+  });
+});

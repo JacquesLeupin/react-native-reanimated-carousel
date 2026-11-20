@@ -152,7 +152,8 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
         const page = computed(-origin / currentSize);
 
         const velocityDirection = -Math.sign(velocity);
-        if (page === nextPage || velocityDirection !== offset) {
+        // A release at rest has no direction, so the distance dragged decides.
+        if (page === nextPage || (velocity !== 0 && velocityDirection !== offset)) {
           // not going anywhere! Velocity was insufficient to overcome the distance to get to a
           // further page. Let's reset gently to the current page.
           finalTranslation = withSpring(withProcessTranslation(-page * currentSize), onFinished);
